@@ -1,0 +1,31 @@
+---
+- name: Configure Let's Encrypt SSL for FastAPI using Certbot
+  hosts: web
+  become: yes
+  vars:
+    domain_name: fastapi.gizachewkassa.tech
+    cert_email: eleccrazy24@gmail.com
+
+  tasks:
+    - name: Install Certbot and NGINX plugin
+      apt:
+        name:
+          - certbot
+          - python3-certbot-nginx
+        state: present
+        update_cache: yes
+
+    - name: Obtain and install SSL certificate via Certbot
+      command: >
+        certbot --nginx --non-interactive --agree-tos
+        --email {{ cert_email }}
+        --redirect
+        -d {{ domain_name }}
+      args:
+        creates: "/etc/letsencrypt/live/{{ domain_name }}/fullchain.pem"
+
+    - name: Ensure Certbot auto-renewal is enabled
+      systemd:
+        name: certbot.timer
+        state: started
+        enabled: yes
