@@ -1,20 +1,46 @@
 ---
-- name: Configure NGINX on Azure VM
+- name: Configure NGINX as reverse proxy for FastAPI
   hosts: web
   become: yes
   tasks:
-    - name: Update apt cache
-      apt:
-        update_cache: yes
-        cache_valid_time: 3600
-
-    - name: Install NGINX
+    - name: Ensure NGINX is installed
       apt:
         name: nginx
         state: present
+        update_cache: yes
 
-    - name: Start and enable NGINX
+    - name: Create NGINX reverse proxy config
+      copy:
+        dest: /etc/nginx/sites-available/fastapi
+        content: |
+          server {
+              listen 80;
+              server_name _;
+
+              location / {
+                  proxy_pass http://127.0.0.1:8000;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+              }
+          }
+      notify: reload nginx
+
+    - name: Enable the fastapi site
+      file:
+        src: /etc/nginx/sites-available/fastapi
+        dest: /etc/nginx/sites-enabled/fastapi
+        state: link
+        force: yes
+
+    - name: Remove default site if it exists
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+
+  handlers:
+    - name: reload nginx
       service:
         name: nginx
-        state: started
-        enabled: yes
+        state: reloaded
