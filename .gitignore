@@ -1,0 +1,14 @@
+# Terraform
+*.tfstate
+*.tfstate.backup
+.terraform/
+terraform.tfvars
+
+# Ansible
+*.retry
+
+# Sensitive or local files
+*.pem
+*.key
+*.log
+*.env
