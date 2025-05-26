@@ -101,8 +101,7 @@ resource "azurerm_network_security_group" "nsg" {
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
-
-
+  
   depends_on = [azurerm_resource_group.rg]
 }
 # Associate the network security group with the subnet
