@@ -1,3 +1,10 @@
+"""
+File: models.py
+Description: SQLAlchemy models and Pydantic schemas for task management API.
+Author: Gizachew Kassa
+Date Created: 2025-05-28
+"""
+
 from database import Base
 from pydantic import BaseModel
 from sqlalchemy import Column, Integer, String

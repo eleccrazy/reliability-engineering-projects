@@ -1,8 +1,16 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+"""
+File: main.py
+Description: FastAPI application for task management with CRUD operations.
+Author: Gizachew Kassa
+Date Created: 2025-05-28
+"""
+
 from typing import List
+
+from database import Base, SessionLocal, engine
+from fastapi import FastAPI, HTTPException
 from models import Task, TaskCreate, TaskUpdate
-from database import SessionLocal, engine, Base
+from pydantic import BaseModel
 
 # Create database tables
 Base.metadata.create_all(bind=engine)

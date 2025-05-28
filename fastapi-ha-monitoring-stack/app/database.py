@@ -1,3 +1,10 @@
+"""
+File: database.py
+Description: Database configuration for FastAPI application using SQLAlchemy.
+Author: Gizachew Kassa
+Date Created: 2025-05-28
+"""
+
 import os
 
 from sqlalchemy import create_engine
