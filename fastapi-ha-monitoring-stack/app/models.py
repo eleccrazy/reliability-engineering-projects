@@ -8,24 +8,34 @@ Date Created: 2025-05-28
 from database import Base
 from pydantic import BaseModel
 from sqlalchemy import Column, Integer, String
-from sqlalchemy.ext.declarative import declarative_base
 
 
-# SQLAlchemy model for the DB
-class Task(Base):
+# SQLAlchemy model
+class TaskDB(Base):
     __tablename__ = "tasks"
 
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, index=True)
-    description = Column(String)
+    name = Column(String, index=True)
+    completed = Column(String, default="False")
 
 
-# Pydantic models for validation
-class TaskCreate(BaseModel):
-    title: str
-    description: str
+# Pydantic models
+class TaskBase(BaseModel):
+    name: str
+    completed: bool = False
+
+
+class TaskCreate(TaskBase):
+    pass
 
 
 class TaskUpdate(BaseModel):
-    title: str | None = None
-    description: str | None = None
+    name: str | None = None
+    completed: bool | None = None
+
+
+class Task(TaskBase):
+    id: int
+
+    class Config:
+        orm_mode = True
