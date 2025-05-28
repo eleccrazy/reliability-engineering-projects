@@ -8,8 +8,9 @@ Date Created: 2025-05-28
 from typing import List
 
 from database import Base, SessionLocal, engine
-from fastapi import FastAPI, HTTPException
-from models import Task, TaskCreate, TaskDB, TaskUpdate
+from db_models import TaskDB
+from fastapi import FastAPI, HTTPException, status
+from schemas import Task, TaskCreate, TaskUpdate
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -22,10 +23,10 @@ def root():
     return {"message": "Task Management API"}
 
 
-@app.post("/tasks/", response_model=Task)
+@app.post("/tasks/", response_model=Task, status_code=status.HTTP_201_CREATED)
 def create_task(task: TaskCreate):
     db = SessionLocal()
-    db_task = TaskDB(**task.dict())
+    db_task = TaskDB(**task.model_dump())
     db.add(db_task)
     db.commit()
     db.refresh(db_task)
@@ -58,7 +59,7 @@ def update_task(task_id: int, task_update: TaskUpdate):
     if task is None:
         db.close()
         raise HTTPException(status_code=404, detail="Task not found")
-    for field, value in task_update.dict(exclude_unset=True).items():
+    for field, value in task_update.model_dump(exclude_unset=True).items():
         setattr(task, field, value)
     db.commit()
     db.refresh(task)
@@ -66,7 +67,7 @@ def update_task(task_id: int, task_update: TaskUpdate):
     return task
 
 
-@app.delete("/tasks/{task_id}")
+@app.delete("/tasks/{task_id}", status_code=status.HTTP_200_OK)
 def delete_task(task_id: int):
     db = SessionLocal()
     task = db.query(TaskDB).filter(TaskDB.id == task_id).first()
