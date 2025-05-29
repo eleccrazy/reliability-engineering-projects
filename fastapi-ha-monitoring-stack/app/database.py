@@ -11,7 +11,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 # Use environment variable or fallback default
-DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL")
+db_url = os.getenv("SQLALCHEMY_DATABASE_URL")
+if not db_url:
+    raise RuntimeError("Environment variable SQLALCHEMY_DATABASE_URL not set")
+
+DATABASE_URL = db_url
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
