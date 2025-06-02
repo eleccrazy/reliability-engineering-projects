@@ -12,3 +12,4 @@ terraform.tfvars
 *.key
 *.log
 *.env
+*.tar
