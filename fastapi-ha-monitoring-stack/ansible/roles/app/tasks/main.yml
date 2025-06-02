@@ -1,0 +1,38 @@
+# Install and configure FastAPI application using Docker
+- name: Install Docker
+  ansible.builtin.apt:
+    name: docker.io
+    state: present
+    update_cache: yes
+
+- name: Ensure Docker service is running
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Copy Docker image archive
+  ansible.builtin.copy:
+    src: ../../app/fastapi-task-app.tar # Path to the Docker image archive
+    dest: /tmp/fastapi-task-app.tar # Destination on the target machine
+
+- name: Load Docker image from archive
+  ansible.builtin.command:
+    cmd: docker load -i /tmp/fastapi-task-app.tar
+  args:
+    creates: /var/lib/docker/image/overlay2/imagedb  # Ensure the image is loaded
+
+- name: Stop existing app container (if running)
+  ansible.builtin.shell: docker stop fastapi-task-app || true # Stop the container if it exists
+  ignore_errors: true
+
+- name: Remove old app container (if exists)
+  ansible.builtin.shell: docker rm fastapi-task-app || true # Remove the container if it exists
+  ignore_errors: true
+
+- name: Run FastAPI Docker container
+  ansible.builtin.shell: >
+    docker run -d --name fastapi-task-app
+    --env-file /home/azureuser/app/.env
+    -p 8000:8000
+    fastapi-task-app
