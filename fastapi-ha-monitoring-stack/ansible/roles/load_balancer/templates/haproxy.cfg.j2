@@ -1,0 +1,22 @@
+global
+    log /dev/log local0
+    log /dev/log local1 notice
+    daemon
+
+defaults
+    log     global
+    option  httplog
+    option  dontlognull
+    timeout connect 5000
+    timeout client  50000
+    timeout server  50000
+
+frontend http_in
+    bind *:80
+    default_backend app_servers
+
+backend app_servers
+    balance roundrobin
+    option httpchk GET /health
+    server app1 10.0.1.4:8000 check
+    server app2 10.0.1.5:8000 check
