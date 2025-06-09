@@ -1,0 +1,48 @@
+# Install and configure PostgreSQL database on the load balancer
+
+- name: Install PostgreSQL
+  ansible.builtin.apt:
+    name: [postgresql, postgresql-contrib]
+    state: present
+    update_cache: yes
+
+- name: Ensure PostgreSQL service is running
+  ansible.builtin.service:
+    name: postgresql
+    state: started
+    enabled: yes
+
+- name: Create database user for FastAPI
+  become_user: postgres
+  ansible.builtin.postgresql_user:
+    name: fastapi
+    password: supersecret
+    priv: "ALL"
+    role_attr_flags: LOGIN
+
+- name: Create FastAPI app database
+  become_user: postgres
+  ansible.builtin.postgresql_db:
+    name: appdb
+    owner: fastapi
+    encoding: UTF8
+    lc_collate: en_US.UTF-8
+    lc_ctype: en_US.UTF-8
+    template: template0
+
+- name: Allow remote access to PostgreSQL (pg_hba.conf)
+  ansible.builtin.lineinfile:
+    path: /etc/postgresql/14/main/pg_hba.conf
+    line: "host    all             all             10.0.0.0/16           md5"
+    insertafter: EOF
+
+- name: Configure PostgreSQL to listen on all interfaces
+  ansible.builtin.lineinfile:
+    path: /etc/postgresql/14/main/postgresql.conf
+    regexp: '^#?listen_addresses'
+    line: "listen_addresses = '*'"
+
+- name: Restart PostgreSQL to apply changes
+  ansible.builtin.service:
+    name: postgresql
+    state: restarted
