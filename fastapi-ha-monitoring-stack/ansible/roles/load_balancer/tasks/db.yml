@@ -1,8 +1,24 @@
 # Install and configure PostgreSQL database on the load balancer
 
+- name: Ensure pip and dependencies are installed
+  ansible.builtin.apt:
+    name:
+      - python3-pip
+      - libpq-dev
+      - python3-dev
+    state: present
+    update_cache: yes
+
+- name: Install psycopg2 via pip
+  ansible.builtin.pip:
+    name: psycopg2-binary
+    executable: pip3
+
 - name: Install PostgreSQL
   ansible.builtin.apt:
-    name: [postgresql, postgresql-contrib]
+    name:
+      - postgresql
+      - postgresql-contrib
     state: present
     update_cache: yes
 
@@ -12,37 +28,27 @@
     state: started
     enabled: yes
 
-- name: Create database user for FastAPI
-  become_user: postgres
-  ansible.builtin.postgresql_user:
-    name: fastapi
-    password: supersecret
-    priv: "ALL"
-    role_attr_flags: LOGIN
-
-- name: Create FastAPI app database
-  become_user: postgres
-  ansible.builtin.postgresql_db:
-    name: appdb
-    owner: fastapi
-    encoding: UTF8
-    lc_collate: en_US.UTF-8
-    lc_ctype: en_US.UTF-8
-    template: template0
-
-- name: Allow remote access to PostgreSQL (pg_hba.conf)
+- name: Allow postgres user local trust access (override existing rule)
   ansible.builtin.lineinfile:
     path: /etc/postgresql/14/main/pg_hba.conf
-    line: "host    all             all             10.0.0.0/16           md5"
-    insertafter: EOF
+    regexp: '^local\s+all\s+postgres'
+    line: 'local   all             postgres                                trust'
 
-- name: Configure PostgreSQL to listen on all interfaces
+- name: Allow postgres user IPv4 loop-back trust access
   ansible.builtin.lineinfile:
-    path: /etc/postgresql/14/main/postgresql.conf
-    regexp: '^#?listen_addresses'
-    line: "listen_addresses = '*'"
+    path: /etc/postgresql/14/main/pg_hba.conf
+    insertafter: '^# IPv4'
+    regexp: '^host\s+all\s+postgres\s+127\.0\.0\.1/32'
+    line: 'host    all             postgres        127.0.0.1/32            trust'
 
-- name: Restart PostgreSQL to apply changes
+- name: Allow postgres user IPv6 loop-back trust access
+  ansible.builtin.lineinfile:
+    path: /etc/postgresql/14/main/pg_hba.conf
+    insertafter: '^# IPv6'
+    regexp: '^host\s+all\s+postgres\s+::1/128'
+    line: 'host    all             postgres        ::1/128                 trust'
+
+- name: Restart PostgreSQL to apply trust auth
   ansible.builtin.service:
     name: postgresql
     state: restarted
