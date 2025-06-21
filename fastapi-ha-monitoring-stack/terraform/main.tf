@@ -1,9 +1,9 @@
 locals {
   vm_map = {
-    "app-1"   = { role = "app", public_ip = false }
-    "app-2"   = { role = "app", public_ip = false }
-    "lb-db"   = { role = "load_balancer", public_ip = true }
-    "monitor" = { role = "monitoring", public_ip = true }
+    "app-1"   = { role = "app", public_ip = false, private_ip = "10.0.1.4" }
+    "app-2"   = { role = "app", public_ip = false, private_ip = "10.0.1.7" }
+    "lb-db"   = { role = "load_balancer", public_ip = true, private_ip = "10.0.1.5" }
+    "monitor" = { role = "monitoring", public_ip = true, private_ip = "10.0.1.6" }
   }
 }
 
