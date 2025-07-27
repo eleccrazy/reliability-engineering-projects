@@ -11,6 +11,7 @@ from database import Base, SessionLocal, engine
 from db_models import TaskDB
 from fastapi import FastAPI, HTTPException, status
 from schemas import Task, TaskCreate, TaskUpdate
+from sqlalchemy.exc import OperationalError
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -21,6 +22,21 @@ app = FastAPI()
 @app.get("/")
 def root():
     return {"message": "Task Management API"}
+
+
+# Add a /health endpoint for health checks
+@app.get("/health", tags=["Health"])
+def health():
+    db = SessionLocal()
+    try:
+        db.execute("SELECT 1")
+        return {"status": "ok", "database": "connected"}
+    except OperationalError:
+        raise HTTPException(
+            status_code=503, detail={"status": "error", "database": "unreachable"}
+        )
+    finally:
+        db.close()
 
 
 @app.post("/tasks/", response_model=Task, status_code=status.HTTP_201_CREATED)
