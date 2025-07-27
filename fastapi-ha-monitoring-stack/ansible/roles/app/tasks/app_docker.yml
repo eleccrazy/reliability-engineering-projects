@@ -1,0 +1,47 @@
+# Install and configure FastAPI application using Docker and Docker Hub
+
+- name: Install Docker
+  ansible.builtin.apt:
+    name: docker.io
+    state: present
+    update_cache: yes
+
+- name: Ensure Docker service is running
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Stop existing app container (if running)
+  ansible.builtin.shell: docker stop fastapi-task-app || true
+  ignore_errors: true
+
+- name: Remove old app container (if exists)
+  ansible.builtin.shell: docker rm fastapi-task-app || true
+  ignore_errors: true
+
+- name: Create app directory
+  ansible.builtin.file:
+    path: /home/azureuser/app
+    state: directory
+    owner: azureuser
+    group: azureuser
+    mode: '0755'
+
+- name: Copy .env file to app VM
+  ansible.builtin.copy:
+    src: ../../app/.env
+    dest: /home/azureuser/app/.env
+    owner: azureuser
+    group: azureuser
+    mode: '0644'
+
+- name: Pull FastAPI Docker image from Docker Hub
+  ansible.builtin.shell: docker pull eleccrazy/fastapi-task-app:latest
+
+- name: Run FastAPI Docker container
+  ansible.builtin.shell: >
+    docker run -d --name fastapi-task-app
+    --env-file /home/azureuser/app/.env
+    -p 8000:8000
+    eleccrazy/fastapi-task-app:latest
