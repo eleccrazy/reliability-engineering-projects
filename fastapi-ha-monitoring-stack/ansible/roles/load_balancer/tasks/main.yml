@@ -1,5 +1,5 @@
 - name: Include HAProxy setup
-  ansible.builtin.import_tasks: haproxy.yml
+  ansible.builtin.import_tasks: ha_proxy.yml
 
 - name: Include PostgreSQL setup
   ansible.builtin.import_tasks: db.yml

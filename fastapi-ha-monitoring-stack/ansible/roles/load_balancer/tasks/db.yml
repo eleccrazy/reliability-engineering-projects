@@ -1,34 +1,38 @@
 # Install and configure PostgreSQL database on the load balancer
 
-- name: Ensure pip and dependencies are installed
+# 1. Packages
+- name: Install PostgreSQL server, tools and Python driver prerequisites
   ansible.builtin.apt:
     name:
-      - python3-pip
-      - libpq-dev
-      - python3-dev
+      - python3-pip          # for psycopg2-binary
+      - python3-dev          # header files for psycopg2-binary wheel
+      - libpq-dev            # PostgreSQL client headers/libs
+      - postgresql           # server
+      - postgresql-contrib   # extra modules (optional but handy)
     state: present
     update_cache: yes
 
-- name: Install psycopg2 via pip
+- name: Install psycopg2 driver from PyPI
   ansible.builtin.pip:
     name: psycopg2-binary
     executable: pip3
 
-- name: Install PostgreSQL
-  ansible.builtin.apt:
-    name:
-      - postgresql
-      - postgresql-contrib
-    state: present
-    update_cache: yes
-
-- name: Ensure PostgreSQL service is running
+# 2. Service
+- name: Ensure PostgreSQL service is started and enabled
   ansible.builtin.service:
     name: postgresql
     state: started
     enabled: yes
 
-- name: Allow postgres user local trust access (override existing rule)
+# 3. postgresql.conf – listen on all interfaces
+- name: Configure PostgreSQL to listen on every IP (0.0.0.0 / ::)
+  ansible.builtin.lineinfile:
+    path: /etc/postgresql/14/main/postgresql.conf
+    regexp: '^#?\s*listen_addresses\s*='
+    line: "listen_addresses = '*'"
+
+# 4. pg_hba.conf – authentication rules
+- name: Allow postgres user local trust access
   ansible.builtin.lineinfile:
     path: /etc/postgresql/14/main/pg_hba.conf
     regexp: '^local\s+all\s+postgres'
@@ -48,7 +52,41 @@
     regexp: '^host\s+all\s+postgres\s+::1/128'
     line: 'host    all             postgres        ::1/128                 trust'
 
-- name: Restart PostgreSQL to apply trust auth
+- name: Allow fastapi user from app subnet to reach appdb (MD5 auth)
+  ansible.builtin.lineinfile:
+    path: /etc/postgresql/14/main/pg_hba.conf
+    insertafter: '^# IPv4'
+    regexp: '^host\s+appdb\s+fastapi\s+10\.0\.1\.0/24'
+    line: 'host    appdb           fastapi         10.0.1.0/24            md5'
+
+# 4.5 Reload PostgreSQL to apply authentication config
+- name: Reload PostgreSQL after pg_hba.conf changes
+  ansible.builtin.service:
+    name: postgresql
+    state: reloaded
+
+# 5. Database objects
+- name: Ensure fastapi role exists with the correct password
+  community.postgresql.postgresql_user:
+    name: fastapi
+    password: "{{ fastapi_db_password | default('supersecret') }}"
+    encrypted: yes
+    state: present
+    login_user: postgres
+    login_unix_socket: /run/postgresql       # ← connect via socket
+    # no become_user here
+
+- name: Ensure appdb database exists and is owned by fastapi
+  community.postgresql.postgresql_db:
+    name: appdb
+    owner: fastapi
+    encoding: UTF8
+    state: present
+    login_user: postgres
+    login_unix_socket: /run/postgresql
+
+# 6. Apply configuration changes
+- name: Restart PostgreSQL to apply configuration changes
   ansible.builtin.service:
     name: postgresql
     state: restarted
