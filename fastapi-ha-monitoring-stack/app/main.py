@@ -11,6 +11,7 @@ from database import Base, SessionLocal, engine
 from db_models import TaskDB
 from fastapi import FastAPI, HTTPException, status
 from schemas import Task, TaskCreate, TaskUpdate
+from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 
 # Create database tables
@@ -29,7 +30,7 @@ def root():
 def health():
     db = SessionLocal()
     try:
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
         return {"status": "ok", "database": "connected"}
     except OperationalError:
         raise HTTPException(
