@@ -1,8 +1,8 @@
 locals {
   vm_map = {
     "app-1"   = { role = "app", public_ip = false, private_ip = "10.0.1.4" }
-    "app-2"   = { role = "app", public_ip = false, private_ip = "10.0.1.7" }
-    "lb-db"   = { role = "load_balancer", public_ip = true, private_ip = "10.0.1.5" }
+    "app-2"   = { role = "app", public_ip = false, private_ip = "10.0.1.5" }
+    "lb-db"   = { role = "load_balancer", public_ip = true, private_ip = "10.0.1.7" }
     "monitor" = { role = "monitoring", public_ip = true, private_ip = "10.0.1.6" }
   }
 }
@@ -61,6 +61,7 @@ resource "azurerm_network_interface" "vm" {
     name                          = "internal"
     subnet_id                     = azurerm_subnet.main.id
     private_ip_address_allocation = "Dynamic"
+    private_ip_address            = each.value.private_ip
     public_ip_address_id          = each.value.public_ip ? azurerm_public_ip.vm[each.key].id : null
   }
     depends_on = [
