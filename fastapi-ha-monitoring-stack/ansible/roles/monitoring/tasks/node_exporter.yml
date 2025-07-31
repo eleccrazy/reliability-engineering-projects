@@ -1,0 +1,62 @@
+---
+- name: Create node_exporter user
+  ansible.builtin.user:
+    name: nodeusr
+    shell: /sbin/nologin
+    system: yes
+    create_home: no
+
+- name: Create directory for node_exporter
+  ansible.builtin.file:
+    path: /opt/node_exporter
+    state: directory
+    owner: nodeusr
+    group: nodeusr
+    mode: '0755'
+
+- name: Download node_exporter tarball
+  ansible.builtin.get_url:
+    url: https://github.com/prometheus/node_exporter/releases/download/v1.8.1/node_exporter-1.8.1.linux-amd64.tar.gz
+    dest: /tmp/node_exporter.tar.gz
+    mode: '0644'
+
+- name: Extract node_exporter
+  ansible.builtin.unarchive:
+    src: /tmp/node_exporter.tar.gz
+    dest: /tmp
+    remote_src: yes
+
+- name: Copy node_exporter binary to /usr/local/bin
+  ansible.builtin.copy:
+    remote_src: yes
+    src: /tmp/node_exporter-1.8.1.linux-amd64/node_exporter
+    dest: /usr/local/bin/node_exporter
+    mode: '0755'
+    owner: nodeusr
+    group: nodeusr
+
+- name: Create systemd service for node_exporter
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/node_exporter.service
+    content: |
+      [Unit]
+      Description=Node Exporter
+      Wants=network-online.target
+      After=network-online.target
+
+      [Service]
+      User=nodeusr
+      Group=nodeusr
+      Type=simple
+      ExecStart=/usr/local/bin/node_exporter
+
+      [Install]
+      WantedBy=multi-user.target
+    mode: '0644'
+
+- name: Reload systemd and start node_exporter
+  ansible.builtin.systemd:
+    name: node_exporter
+    enabled: true
+    state: started
+    daemon_reload: yes

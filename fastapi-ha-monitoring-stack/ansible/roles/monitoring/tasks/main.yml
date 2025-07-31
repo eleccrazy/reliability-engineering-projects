@@ -1,3 +1,7 @@
----
 - name: Include Prometheus setup
   include_tasks: prometheus.yml
+  when: install_prometheus | default(false)
+
+- name: Include Node Exporter setup
+  include_tasks: node_exporter.yml
+  when: install_node_exporter | default(false)
