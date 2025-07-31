@@ -5,15 +5,4 @@
   roles:
     - role: monitoring
       vars:
-        install_prometheus: true
-        install_node_exporter: false
-
-# Run node_exporter setup on all hosts (including app, lb-db, monitor)
-- name: Install node_exporter on all VMs
-  hosts: all
-  become: yes
-  roles:
-    - role: monitoring
-      vars:
-        install_prometheus: false
-        install_node_exporter: true
+        install_grafana: true
