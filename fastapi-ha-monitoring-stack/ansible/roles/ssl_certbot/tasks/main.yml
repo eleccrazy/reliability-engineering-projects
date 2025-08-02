@@ -1,0 +1,10 @@
+- name: Install Certbot
+  include_tasks: install_certbot.yml
+
+- name: Setup SSL for Nginx (monitoring)
+  when: inventory_hostname in groups['monitoring']
+  include_tasks: nginx_cert.yml
+
+- name: Setup SSL for HAProxy (load balancer)
+  when: inventory_hostname in groups['load_balancer']
+  include_tasks: haproxy_cert.yml

@@ -1,0 +1,11 @@
+- name: Ensure Nginx is installed
+  apt:
+    name: nginx
+    state: present
+
+- name: Obtain SSL cert via Certbot (Nginx plugin)
+  command: >
+    certbot --nginx -n --agree-tos --email {{ certbot_email }}
+    -d {{ monitor_domain }}
+  args:
+    creates: /etc/letsencrypt/live/{{ monitor_domain }}/fullchain.pem

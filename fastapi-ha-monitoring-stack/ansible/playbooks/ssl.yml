@@ -1,0 +1,5 @@
+- name: Setup SSL certs for public-facing servers
+  hosts: load_balancer:monitoring
+  become: yes
+  roles:
+    - ssl_certbot

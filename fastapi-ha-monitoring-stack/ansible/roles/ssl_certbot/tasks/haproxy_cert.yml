@@ -1,0 +1,12 @@
+- name: Obtain SSL cert via Certbot (standalone)
+  command: >
+    certbot certonly --standalone -n --agree-tos --email {{ certbot_email }}
+    -d {{ app_domain }}
+  args:
+    creates: /etc/letsencrypt/live/{{ app_domain }}/fullchain.pem
+
+- name: Concatenate fullchain and privkey for HAProxy
+  command: >
+    bash -c "cat /etc/letsencrypt/live/{{ app_domain }}/fullchain.pem
+    /etc/letsencrypt/live/{{ app_domain }}/privkey.pem >
+    /etc/ssl/private/{{ app_domain }}.pem"

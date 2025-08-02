@@ -58,6 +58,7 @@
     owner: prometheus
     group: prometheus
     mode: '0644'
+  notify: Restart Prometheus
 
 - name: Create Prometheus systemd service
   ansible.builtin.copy:

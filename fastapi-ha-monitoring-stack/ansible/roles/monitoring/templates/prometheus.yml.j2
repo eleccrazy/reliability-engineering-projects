@@ -9,3 +9,8 @@ scrape_configs:
 {% for host in groups['all'] %}
         - "{{ hostvars[host]['private_ip'] }}:9100"
 {% endfor %}
+
+  - job_name: "prometheus"
+    static_configs:
+      - targets:
+        - "localhost:9090"
