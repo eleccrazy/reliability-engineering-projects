@@ -2,6 +2,7 @@ global
     log /dev/log local0
     log /dev/log local1 notice
     daemon
+    tune.ssl.default-dh-param 2048
 
 defaults
     log     global
@@ -13,7 +14,16 @@ defaults
 
 frontend http_in
     bind *:80
+    acl url_acme path_beg /.well-known/acme-challenge/
+    use_backend acme_challenge if url_acme
     default_backend app_servers
+
+frontend https_in
+    bind *:443 ssl crt /etc/haproxy/certs/app.gizachewkassa.tech.pem
+    default_backend app_servers
+
+backend acme_challenge
+    server local_acme 127.0.0.1:8888
 
 backend app_servers
     balance roundrobin

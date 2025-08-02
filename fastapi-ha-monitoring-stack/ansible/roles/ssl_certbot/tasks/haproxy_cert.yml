@@ -1,12 +1,32 @@
-- name: Obtain SSL cert via Certbot (standalone)
-  command: >
-    certbot certonly --standalone -n --agree-tos --email {{ certbot_email }}
-    -d {{ app_domain }}
+- name: Ensure ACME challenge directory exists
+  ansible.builtin.file:
+    path: /var/www/acme
+    state: directory
+    mode: '0755'
+
+- name: Start lightweight ACME challenge server
+  ansible.builtin.shell: |
+    nohup python3 -m http.server 8888 --directory /var/www/acme > /var/log/acme_server.log 2>&1 &
+  args:
+    creates: /tmp/acme_http_server_started
+
+- name: Obtain SSL cert via Certbot (webroot)
+  ansible.builtin.command:
+    cmd: >
+      certbot certonly --webroot -w /var/www/acme
+      -n --agree-tos --email {{ certbot_email }} -d {{ app_domain }}
   args:
     creates: /etc/letsencrypt/live/{{ app_domain }}/fullchain.pem
 
+- name: Ensure HAProxy cert directory exists
+  ansible.builtin.file:
+    path: /etc/haproxy/certs
+    state: directory
+    mode: '0755'
+
 - name: Concatenate fullchain and privkey for HAProxy
-  command: >
-    bash -c "cat /etc/letsencrypt/live/{{ app_domain }}/fullchain.pem
-    /etc/letsencrypt/live/{{ app_domain }}/privkey.pem >
-    /etc/ssl/private/{{ app_domain }}.pem"
+  ansible.builtin.shell: |
+    cat /etc/letsencrypt/live/{{ app_domain }}/fullchain.pem \
+        /etc/letsencrypt/live/{{ app_domain }}/privkey.pem \
+        > /etc/haproxy/certs/{{ app_domain }}.pem
+  notify: Restart HAProxy
