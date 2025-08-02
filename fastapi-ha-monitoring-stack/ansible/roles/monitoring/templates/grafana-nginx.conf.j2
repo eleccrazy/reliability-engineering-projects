@@ -1,6 +1,16 @@
 server {
     listen 80;
-    server_name _;
+    server_name monitor.gizachewkassa.tech;
+
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name monitor.gizachewkassa.tech;
+
+    ssl_certificate /etc/letsencrypt/live/monitor.gizachewkassa.tech/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/monitor.gizachewkassa.tech/privkey.pem;
 
     location / {
         proxy_pass http://localhost:3000/;

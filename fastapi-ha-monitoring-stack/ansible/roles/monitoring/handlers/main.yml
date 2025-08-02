@@ -3,4 +3,9 @@
     name: prometheus
     state: restarted
     enabled: true
-    daemon_reload: true
+
+- name: Reload Nginx
+  ansible.builtin.systemd:
+    name: nginx
+    state: reloaded
+    enabled: true
