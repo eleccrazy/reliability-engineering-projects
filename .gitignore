@@ -13,3 +13,6 @@ terraform.tfvars
 *.log
 *.env
 *.tar
+
+# Remove self note tracking file
+self_notes.txt

@@ -10,6 +10,7 @@ from typing import List
 from database import Base, SessionLocal, engine
 from db_models import TaskDB
 from fastapi import FastAPI, HTTPException, status
+from prometheus_fastapi_instrumentator import Instrumentator
 from schemas import Task, TaskCreate, TaskUpdate
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
@@ -18,6 +19,15 @@ from sqlalchemy.exc import OperationalError
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+# Initialize Prometheus instrumentation. Exclude /metrics and /health endpoints from instrumentation.
+
+Instrumentator(
+    should_group_status_codes=True,
+    should_ignore_untemplated=True,
+    env_var_name="ENABLE_METRICS",
+    excluded_handlers=["/metrics", "/health"],
+).instrument(app).expose(app)
 
 
 @app.get("/")
