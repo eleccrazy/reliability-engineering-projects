@@ -14,3 +14,14 @@ scrape_configs:
     static_configs:
       - targets:
         - "localhost:9090"
+
+  # FastAPI app metrics
+  - job_name: "task-api"
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+{% for host in groups.get('app', []) %}
+        - "{{ hostvars[host]['private_ip'] }}:{{ hostvars[host].get('app_port', 8000) }}"
+{% endfor %}
+        labels:
+          service: "task-api"
